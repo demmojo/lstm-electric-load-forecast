@@ -13,14 +13,29 @@ from plot import plot_predictions
 def build_model(prediction_steps):
     model = Sequential()
     layers = [1, 75, 100, prediction_steps]
-    model.add(LSTM(layers[1], input_shape=(None, layers[0]), return_sequences=True))  # add first layer
+    model.add(CuDNNLSTM(layers[1], input_shape=(None, layers[0]), return_sequences=True))  # add first layer
     model.add(Dropout(0.2))  # add dropout for first layer
-    model.add(LSTM(layers[2], return_sequences=False))  # add second layer
+    model.add(CuDNNLSTM(layers[2], return_sequences=True))  # add second layer
     model.add(Dropout(0.2))  # add dropout for second layer
+    '''model.add(CuDNNLSTM(layers[2], return_sequences=True))
+    model.add(Dropout(0.2))'''
+    model.add(CuDNNLSTM(layers[2], return_sequences=False))
+    model.add(Dropout(0.2))
+    model.add(Dense(32,activation='linear'))
+    model.add(Dropout(0.2))
+    #model.add(Dense(32,activation='relu'))
+    #model.add(Dropout(0.2))
     model.add(Dense(layers[3]))  # add output layer
     model.add(Activation('linear'))  # output layer with linear activation
     start = time.time()
-    model.compile(loss="mse", optimizer="rmsprop")
+    #model.compile(loss="mse", optimizer="rmsprop")
+    opt=optimizers.Adam(lr=0.001,decay=1e-5) 
+    #opt=optimizers.SGD(lr=0.01, nesterov=True)
+    #opt=optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
+    #opt=optimizers.Adamax(lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0)
+    #opt=optimizers.Nadam(lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=None, schedule_decay=0.004)
+    #model.compile(loss='mean_absolute_error',optimizer=opt,metrics =["accuracy"])
+    model.compile(optimizer = opt, loss = root_mean_squared_error,metrics =["accuracy"])
     print('Compilation Time : ', time.time() - start)
     return model
 
